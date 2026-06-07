@@ -1,2 +1,0 @@
-# yume-koe
-mejorando
