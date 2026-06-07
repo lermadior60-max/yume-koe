@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat de Nuestro Salón - ImgBB</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #1a1a24; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        
+        #chat-container { width: 100%; max-width: 450px; height: 90vh; background-color: #242533; border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        
+        header { background-color: #313246; padding: 15px; text-align: center; font-size: 1.2rem; font-weight: bold; border-bottom: 1px solid #3d3e56; color: #00adb5; }
+        
+        #zona-mensajes { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        
+        .bubble { max-width: 75%; padding: 10px 14px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; word-break: break-word; }
+        .bubble .user { font-size: 0.75rem; color: #00adb5; font-weight: bold; margin-bottom: 3px; display: block; }
+        .bubble img { max-width: 100%; border-radius: 8px; margin-top: 5px; display: block; cursor: pointer; }
+        
+        .msg-recibido { background-color: #313246; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg-enviado { background-color: #00adb5; color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-enviado .user { color: #fff; }
+
+        #input-area { padding: 15px; background-color: #1a1a24; display: flex; gap: 10px; align-items: center; }
+        #input-text { flex: 1; background-color: #242533; border: 1px solid #3d3e56; padding: 12px; border-radius: 25px; color: #fff; outline: none; }
+        
+        .btn-media { background: none; border: none; cursor: pointer; color: #8a8b9c; font-size: 1.4rem; transition: color 0.2s; }
+        .btn-media:hover { color: #00adb5; }
+        #file-input { display: none; }
+
+        #btn-enviar { background-color: #00adb5; color: white; border: none; padding: 10px 18px; border-radius: 25px; font-weight: bold; cursor: pointer; }
+        #btn-enviar:hover { background-color: #008f96; }
+
+        #loading { display: none; text-align: center; padding: 5px; font-size: 0.85rem; color: #ff9f43; background-color: #1a1a24; }
+    </style>
+</head>
+<body>
+
+    <div id="chat-container">
+        <header> El Chat </header>
+        <div id="loading">Enviando imagen. porfavor espere.
+        </div>
+        <div id="zona-mensajes"></div>
+        
+        <div id="input-area">
+            <label for="file-input" class="btn-media">📷</label>
+            <input type="file" id="file-input" accept="image/*">
+            
+            <input type="text" id="input-text" placeholder="Escribe un mensaje..." autocomplete="off">
+            <button id="btn-enviar">Enviar</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // TUS DATOS REALES DE FIREBASE (CONFIGURADOS)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCYAgWaPJCm7zZzGEb",
+            authDomain: "chat-del-grupo.firebaseapp.com",
+            projectId: "chat-del-grupo",
+            storageBucket: "chat-del-grupo.appspot.com",
+            messagingSenderId: "475599120602",
+            appId: "1:475599120602:web:2652e4",
+            measurementId: "G-3PGVTGM008"
+        };
+
+        // TU CLAVE REAL DE IMGBB (CONFIGURADA)
+        const imgbbApiKey = "012cb83390dbd4ba8bcc79df9a2ad1cb";
+
+        // Inicializar aplicaciones y Base de Datos
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const miNombre = prompt("Introduce tu nombre o apodo para el chat:") || "Anónimo";
+
+        const zonaMensajes = document.getElementById("zona-mensajes");
+        const inputText = document.getElementById("input-text");
+        const btnEnviar = document.getElementById("btn-enviar");
+        const fileInput = document.getElementById("file-input");
+        const loadingIndicator = document.getElementById("loading");
+
+        // ESCUCHAR MENSAJES EN TIEMPO REAL
+        const q = query(collection(db, "mensajes"), orderBy("fecha", "asc"));
+        onSnapshot(q, (snapshot) => {
+            zonaMensajes.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const esMio = data.usuario === miNombre;
+                
+                const bubble = document.createElement("div");
+                bubble.classList.add("bubble", esMio ? "msg-enviado" : "msg-recibido");
+                
+                let contenido = `<span class="user">${data.usuario}</span>`;
+                if(data.texto) contenido += `<span>${data.texto}</span>`;
+                if(data.fotoUrl) contenido += `<img src="${data.fotoUrl}" alt="Imagen del chat" onclick="window.open('${data.fotoUrl}', '_blank')">`;
+                
+                bubble.innerHTML = contenido;
+                zonaMensajes.appendChild(bubble);
+            });
+            zonaMensajes.scrollTop = zonaMensajes.scrollHeight;
+        });
+
+        // ENVIAR MENSAJE DE TEXTO
+        async function mandarMensaje() {
+            const texto = inputText.value.trim();
+            if (!texto) return;
+
+            inputText.value = "";
+            await addDoc(collection(db, "mensajes"), {
+                usuario: miNombre,
+                texto: texto,
+                fecha: serverTimestamp()
+            });
+        }
+
+        btnEnviar.addEventListener("click", mandarMensaje);
+        inputText.addEventListener("keypress", (e) => { if(e.key === 'Enter') mandarMensaje(); });
+
+        // SUBIR A IMGBB Y ENVIAR AL CHAT
+        fileInput.addEventListener("change", async (e) => {
+            const archivo = e.target.files[0];
+            if (!archivo) return;
+
+            loadingIndicator.style.display = "block";
+
+            const formData = new FormData();
+            formData.append("image", archivo);
+
+            try {
+                const respuesta = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                const resultado = await respuesta.json();
+
+                if (resultado.success) {
+                    const urlFotoDirecta = resultado.data.display_url;
+
+                    await addDoc(collection(db, "mensajes"), {
+                        usuario: miNombre,
+                        fotoUrl: urlFotoDirecta,
+                        fecha: serverTimestamp()
+                    });
+                } else {
+                    alert("ImgBB rechazó la imagen. Verifica tu cuenta.");
+                }
+
+            } catch (error) {
+                console.error("Error en la subida:", error);
+                alert("Hubo un fallo de conexión al subir la imagen.");
+            } finally {
+                loadingIndicator.style.display = "none";
+                fileInput.value = "";
+            }
+        });
+    </script>
+</body>
+</html>
