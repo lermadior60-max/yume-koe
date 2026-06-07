@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lerm hero</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-image: url('d224ae16dff265042c8b7978f625f214.jpg');
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            /* Evita comportamientos extraños de scroll en móviles al tocar */
+            touch-action: none; 
+        }
+
+        #container {
+            position: relative;
+            width: 375px;
+            height: 375px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background-image: url('4f91aafcde0612af4a27e56b66fcfa80.jpg');
+            width: 100%;
+            height: 100%;
+        }
+
+        #score {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 32px;
+            font-weight: bold;
+            color: red;
+            z-index: 10;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            text-align: center;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: none;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        #restart-btn {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 20;
+        }
+
+        #restart-btn:hover {
+            background-color: #e64a19;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+      <div class="titulo" style="width: 150px; height: 40px; border-radius: 10%;background-color: aquamarine;">
+      <h1>Lerm hero</h1>
+        </div>
+      
+        <div id="score">0</div>
+        <div id="instructions">Mantén presionado para estirar el palo</div>
+        <button id="restart-btn">Reiniciar</button>
+        <canvas id="game" width="375" height="375"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+        const restartBtn = document.getElementById("restart-btn");
+        const instructions = document.getElementById("instructions");
+
+        let phase = "waiting"; 
+        let lastTimestamp = 0;
+        
+        let heroX, heroY;
+        let platforms = [];
+        let stickWidth = 0;
+        let stickAngle = 0;
+        let score = 0;
+        let sceneOffset = 0;
+
+        const heroSize = 16;
+        const platformHeight = 100;
+        const walkingSpeed = 3;
+        const stretchingSpeed = 3;
+
+        function init() {
+            platforms = [
+                { x: 30, w: 60 },
+                { x: 180, w: 50 }
+            ];
+            heroX = platforms[0].x + platforms[0].w - heroSize - 5;
+            heroY = canvas.height - platformHeight - heroSize;
+            stickWidth = 0;
+            stickAngle = 0;
+            score = 0;
+            sceneOffset = 0;
+            phase = "waiting";
+            scoreElement.textContent = score;
+            restartBtn.style.display = "none";
+            instructions.style.display = "block";
+            lastTimestamp = performance.now();
+            window.requestAnimationFrame(gameLoop);
+        }
+
+        function generateNextPlatform() {
+            const lastPlatform = platforms[platforms.length - 1];
+            const minGap = 40;
+            const maxGap = 150;
+            const minWidth = 20;
+            const maxWidth = 70;
+
+            const gap = minGap + Math.random() * (maxGap - minGap);
+            const width = minWidth + Math.random() * (maxWidth - minWidth);
+            const x = lastPlatform.x + lastPlatform.w + gap;
+
+            if (x < canvas.width + 100) {
+                platforms.push({ x: x, w: width });
+            }
+        }
+
+        // --- CORRECCIÓN AQUÍ: Usar pointerdown y pointerup para asegurar compatibilidad total ---
+        window.addEventListener("pointerdown", (e) => {
+            // Evitamos que se active si haces clic en el botón de reiniciar
+            if (e.target === restartBtn) return; 
+            
+            if (phase === "waiting") {
+                phase = "stretching";
+                instructions.style.display = "none";
+            }
+        });
+
+        window.addEventListener("pointerup", () => {
+            if (phase === "stretching") {
+                phase = "turning";
+            }
+        });
+
+        restartBtn.addEventListener("click", (e) => {
+            e.stopPropagation(); // Evita que el clic active el estiramiento del juego
+            init();
+        });
+
+        function gameLoop(timestamp) {
+            let deltaTime = timestamp - lastTimestamp;
+            if (deltaTime > 100) deltaTime = 16;
+            lastTimestamp = timestamp;
+
+            update(deltaTime);
+            draw();
+
+            if (phase !== "falling" || heroY < canvas.height + 50) {
+                window.requestAnimationFrame(gameLoop);
+            } else {
+                restartBtn.style.display = "block";
+            }
+        }
+
+        function update(deltaTime) {
+            switch (phase) {
+                case "stretching":
+                    stickWidth += stretchingSpeed;
+                    break;
+                
+                case "turning":
+                    stickAngle += 0.05;
+                    if (stickAngle >= Math.PI / 2) {
+                        stickAngle = Math.PI / 2;
+                        phase = "walking";
+                    }
+                    break;
+
+                case "walking":
+                    heroX += walkingSpeed;
+                    const stickFarEnd = platforms[0].x + platforms[0].w + stickWidth;
+                    
+                    if (heroX >= stickFarEnd - heroSize / 2) {
+                        heroX = stickFarEnd - heroSize / 2;
+                        
+                        const target = platforms[1];
+                        if (stickFarEnd >= target.x && stickFarEnd <= target.x + target.w) {
+                            phase = "transitioning";
+                            score++;
+                            scoreElement.textContent = score;
+                            generateNextPlatform();
+                        } else {
+                            phase = "falling";
+                        }
+                    }
+                    break;
+
+                case "transitioning":
+                    const targetOffset = platforms[1].x - 30;
+                    if (sceneOffset < targetOffset) {
+                        const speed = 4;
+                        sceneOffset += speed;
+                        heroX -= speed;
+                        platforms.forEach(p => p.x -= speed);
+                        stickWidth -= speed; 
+                    } else {
+                        platforms.shift();
+                        sceneOffset = 0;
+                        stickWidth = 0;
+                        stickAngle = 0;
+                        heroX = platforms[0].x + platforms[0].w - heroSize - 5;
+                        phase = "waiting";
+                    }
+                    break;
+
+                case "falling":
+                    if (stickAngle < Math.PI) {
+                        stickAngle += 0.1;
+                    }
+                    heroY += 6;
+                    break;
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Dibujar Plataformas
+            ctx.fillStyle = "#222";
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x, canvas.height - platformHeight, platform.w, platformHeight);
+                
+                ctx.fillStyle = "red";
+                ctx.fillRect(platform.x + platform.w/2 - 2, canvas.height - platformHeight, 4, 4);
+                ctx.fillStyle = "#222";
+            });
+
+            // 2. Dibujar el Palo
+            ctx.save();
+            const pivotX = platforms[0].x + platforms[0].w;
+            const pivotY = canvas.height - platformHeight;
+            ctx.translate(pivotX, pivotY);
+            ctx.rotate(stickAngle);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#000";
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(0, -stickWidth);
+            ctx.stroke();
+            ctx.restore();
+
+            // 3. Dibujar el Personaje
+            ctx.fillStyle = "#000";
+            ctx.fillRect(heroX, heroY, heroSize, heroSize);
+            ctx.fillStyle = "#fff";
+            ctx.fillRect(heroX + heroSize - 5, heroY + 3, 3, 3);
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
