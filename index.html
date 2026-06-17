@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tarjeta Digital - CUMPLIPLACA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="card-container">
+        
+        <div class="card-header-carousel">
+            <button class="carousel-btn prev" onclick="moveSlide(-1)"><i class="fas fa-chevron-left"></i></button>
+            
+            <div class="carousel-track">
+                <div class="carousel-slide active" style="background-image: url('IMG-20260615-WA0025.jpg');"></div>
+                <div class="carousel-slide" style="background-image: url('IMG-20260616-WA0002.jpg');"></div>
+                <div class="carousel-slide" style="background-image: url('IMG-20260616-WA0003.jpg');"></div>
+            </div>
+
+            <button class="carousel-btn next" onclick="moveSlide(1)"><i class="fas fa-chevron-right"></i></button>
+            
+            <div class="carousel-dots">
+                <div class="dot active" onclick="currentSlide(0)"></div>
+                <div class="dot" onclick="currentSlide(1)"></div>
+                <div class="dot" onclick="currentSlide(2)"></div>
+            </div>
+
+            <div class="profile-img-container">
+                <img src="IMG_20260616_153728.png" alt="Perfil CUMPLIPLACA">
+                <div class="verified-badge">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+        </div>
+
+        
+           <div class="profile-img-container">
+                <img src="IMG_20260616_153728.png" alt="Perfil CUMPLIPLACA">
+                <div class="verified-badge">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+        
+        
+        <div class="profile-info">
+            <h1>CUMPLIPLACA</h1>
+            <h2>Servicios Profesionales</h2>
+            <p>Especialistas en soluciones eficientes y personalizadas.</p>
+        </div>
+
+        <div class="main-actions">
+           
+            <a href="tel:+573108994332" class="btn">
+                <i class="fas fa-phone-alt"></i> Llamar
+            </a>
+        </div>
+
+        <p class="interaction-instruction">Toca los iconos para interactuar</p>
+
+        <div class="icon-grid">
+            <div class="icon-item" onclick="openModal('modal-servicios')">
+                <i class="fas fa-home"></i>
+                <span>Servicios</span>
+            </div>
+            <div class="icon-item" onclick="openModal('modal-horario')">
+                <i class="fas fa-clock"></i>
+                <span>Horario de atención</span>
+            </div>
+            <div class="icon-item" onclick="openModal('modal-qr')">
+                <i class="fas fa-qrcode"></i>
+                <span>Código QR</span>
+            </div>
+            <a href="https://maps.google.com" target="_blank" class="icon-item" style="color:inherit; text-decoration:none;">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Ubicación</span>
+            </a>
+        </div>
+
+        <div class="icon-grid">
+            <a href="https://facebook.com" target="_blank" class="icon-item" style="color:inherit; text-decoration:none;">
+                <i class="fab fa-facebook-f"></i>
+                <span>Facebook</span>
+            </a>
+            <a href="https://instagram.com" target="_blank" class="icon-item" style="color:inherit; text-decoration:none;">
+                <i class="fab fa-instagram"></i>
+                <span>Instagram</span>
+            </a>
+            <a href="https://wa.me/573108994332" target="_blank" class="icon-item" style="color:inherit; text-decoration:none;">
+                <i class="fab fa-whatsapp"></i>
+                <span>WhatsApp</span>
+            </a>
+            <div class="icon-item" onclick="downloadVCard()">
+                <i class="fas fa-address-card"></i>
+                <span>Guardar Contacto</span>
+            </div>
+        </div>
+
+        <div class="install-link">
+            <a onclick="openModal('modal-instalar')">¿Cómo instalar en mi dispositivo?</a>
+        </div>
+
+        
+    </div>
+
+
+    <div id="modal-servicios" class="modal" onclick="closeModalOnOutsideClick(event, 'modal-servicios')">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('modal-servicios')">×</span>
+            <div class="modal-title">Mis Servicios</div>
+            
+            <div class="service-list-item">
+                <img src="IMG-20260616-WA0010.jpg" alt="Placas">
+                <div>
+                    <h4>Placas</h4>
+                    <p>Diseño, manufactura y asesoría en placas personalizadas de alta calidad.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-horario" class="modal" onclick="closeModalOnOutsideClick(event, 'modal-horario')">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close-modal" onclick="closeModal('modal-horario')">×</span>
+            <div class="modal-title">Horario de Atención</div>
+            <p style="margin-bottom: 10px; font-weight: 600;">Lunes a Viernes</p>
+            <p style="color: #666; margin-bottom: 20px;">08:00 AM - 05:00 PM</p>
+            <p style="margin-bottom: 10px; font-weight: 600;">Sábados</p>
+            <p style="color: #666;">09:00 AM - 01:00 PM</p>
+        </div>
+    </div>
+
+    <div id="modal-qr" class="modal" onclick="closeModalOnOutsideClick(event, 'modal-qr')">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('modal-qr')">×</span>
+            <div class="modal-title">Escanea para Contactar</div>
+            <div class="qr-container">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://cumpliplaca.com" alt="Código QR de contacto" style="border: 1px solid #ccc; padding: 5px; border-radius: 10px;">
+                <p>¡Apunta la cámara de tu móvil aquí! Guarda mi contacto o comparte esta tarjeta de forma instantánea.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-instalar" class="modal" onclick="closeModalOnOutsideClick(event, 'modal-instalar')">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('modal-instalar')">×</span>
+            <div class="modal-title">¡Lleva mi Tarjeta Contigo!</div>
+            <div class="instructions-box">
+                <p>Accede a mi contacto rápidamente guardando esta tarjeta en la pantalla de inicio. ¡Es muy fácil!</p>
+                
+                <h5><i class="fab fa-apple"></i> Para iOS (iPhone)</h5>
+                <ol style="margin-left: 20px;">
+                    <li>Toca el icono de <strong>Compartir</strong> <i class="fas fa-external-link-alt"></i> en Safari.</li>
+                    <li>Selecciona <strong>"Agregar a la pantalla de inicio"</strong>.</li>
+                    <li>¡Listo! El acceso directo aparecerá en tu móvil.</li>
+                </ol>
+
+                <h5><i class="fab fa-android"></i> Para Android</h5>
+                <ol style="margin-left: 20px;">
+                    <li>Toca los <strong>tres puntos :</strong> en Chrome.</li>
+                    <li>Selecciona <strong>"Agregar a la pantalla principal"</strong>.</li>
+                    <li>Confirma la acción y la tarjeta se añadirá.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
